@@ -1,0 +1,24 @@
+# Virtual environment & Python cache
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*.so
+.DS_Store
+.system_generated/
+*.log
+.ipynb_checkpoints/
+.env
+.env.*
+
+# Datasets & raw audio archives
+data/
+codefile/*.zip
+codefile/archive.zip
+Actor_*/
+audio_speech_actors_01-24/
+
+# Large models exceeding GitHub's 100MB limit
+# (Lightweight models under 2MB are tracked for GitHub/Vercel)
+models/emotion_model.joblib
+models/sentiment_model.joblib

@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Speech Sentiment & Emotion AI - 6th Sem Project</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background: radial-gradient(circle at top left, #0f172a, #020617 80%);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+    .glass-card {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-card-glow {
+      box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.15);
+    }
+    .pulse-record {
+      animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+    }
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 16px rgba(239, 68, 68, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+  </style>
+</head>
+<body class="text-slate-100 min-h-screen flex flex-col justify-between antialiased">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800/80 bg-slate-900/50 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+          <i data-lucide="mic" class="w-5 h-5 text-white"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold bg-gradient-to-r from-indigo-400 via-purple-300 to-pink-400 bg-clip-text text-transparent">
+            Speech Sentiment AI
+          </h1>
+          <p class="text-xs text-slate-400">RAVDESS Acoustic Emotion & Sentiment Classifier</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-3">
+        <button id="btnOpenQrModal" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-md shadow-indigo-500/25 transition flex items-center space-x-1.5 active:scale-95">
+          <i data-lucide="qr-code" class="w-4 h-4"></i>
+          <span>📱 Try on Phone (QR Code)</span>
+        </button>
+        <span class="hidden sm:inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+          <span class="w-2 h-2 mr-1.5 rounded-full bg-indigo-400 animate-ping"></span>
+          6th Sem Project
+        </span>
+        <button id="btnOpenMetrics" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 border border-slate-700 transition flex items-center space-x-1.5">
+          <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i>
+          <span>Benchmark</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-grow">
+    
+    <!-- Hero / Intro -->
+    <div class="text-center max-w-2xl mx-auto mb-8">
+      <h2 class="text-3xl font-extrabold tracking-tight sm:text-4xl text-white">
+        Voice Sentiment & Emotion Recognition
+      </h2>
+      <p class="mt-2 text-sm text-slate-400">
+        Record your voice directly or upload an audio file. The ensemble acoustic model extracts 478 spectral & prosodic features to determine sentiment polarity and granular emotion.
+      </p>
+    </div>
+
+    <!-- Grid Layout: Left Input Panel, Right Results Panel -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      
+      <!-- LEFT: Input Controls (Col 5) -->
+      <div class="lg:col-span-5 space-y-6">
+        
+        <!-- Tab Selector Card -->
+        <div class="glass-card glass-card-glow rounded-2xl p-6">
+          <div class="flex border-b border-slate-700/60 pb-3 mb-5 space-x-4">
+            <button id="tabMic" class="flex-1 pb-2 text-xs font-semibold uppercase tracking-wider text-indigo-400 border-b-2 border-indigo-500 flex items-center justify-center space-x-1.5 transition">
+              <i data-lucide="mic" class="w-4 h-4"></i>
+              <span>Live Mic</span>
+            </button>
+            <button id="tabUpload" class="flex-1 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center justify-center space-x-1.5 transition">
+              <i data-lucide="upload" class="w-4 h-4"></i>
+              <span>File Upload</span>
+            </button>
+            <button id="tabDemo" class="flex-1 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center justify-center space-x-1.5 transition">
+              <i data-lucide="play-circle" class="w-4 h-4"></i>
+              <span>Demo Clips</span>
+            </button>
+          </div>
+
+          <!-- Section 1: Live Mic Recording -->
+          <div id="sectionMic" class="space-y-4">
+            <div class="text-center py-4">
+              <canvas id="visualizerCanvas" class="w-full h-20 rounded-xl bg-slate-950/60 border border-slate-800 mb-4"></canvas>
+              <div id="recTimer" class="text-2xl font-mono font-bold text-slate-300 mb-4">00:00</div>
+              
+              <div class="flex justify-center items-center space-x-4">
+                <button id="btnRecordToggle" class="w-16 h-16 rounded-full bg-red-600 hover:bg-red-500 text-white flex items-center justify-center shadow-lg shadow-red-600/40 transition active:scale-95">
+                  <i id="recIcon" data-lucide="mic" class="w-7 h-7"></i>
+                </button>
+              </div>
+              <p id="recStatusText" class="mt-3 text-xs text-slate-400">Click the microphone to start speaking</p>
+            </div>
+          </div>
+
+          <!-- Section 2: File Upload -->
+          <div id="sectionUpload" class="hidden space-y-4">
+            <div id="dropZone" class="border-2 border-dashed border-slate-700 hover:border-indigo-500/70 rounded-2xl p-8 text-center cursor-pointer transition bg-slate-900/40 hover:bg-slate-800/40">
+              <div class="w-12 h-12 mx-auto mb-3 rounded-full bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
+                <i data-lucide="upload-cloud" class="w-6 h-6"></i>
+              </div>
+              <p class="text-sm font-medium text-slate-200">Drag & drop your voice recording here</p>
+              <p class="text-xs text-slate-400 mt-1">Supports WAV, MP3, OGG, WEBM, M4A</p>
+              <input type="file" id="fileInput" accept="audio/*" class="hidden" />
+              <input type="file" id="mobileVoiceInput" accept="audio/*" capture="microphone" class="hidden" />
+              <div class="flex flex-wrap justify-center gap-2 mt-4">
+                <button type="button" onclick="document.getElementById('fileInput').click()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md transition flex items-center space-x-1.5">
+                  <i data-lucide="folder" class="w-3.5 h-3.5"></i>
+                  <span>Browse Audio File</span>
+                </button>
+                <button type="button" onclick="document.getElementById('mobileVoiceInput').click()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 shadow-md transition flex items-center space-x-1.5">
+                  <i data-lucide="mic" class="w-3.5 h-3.5 text-indigo-400"></i>
+                  <span>Phone Voice Recorder</span>
+                </button>
+              </div>
+            </div>
+            <div id="selectedFileInfo" class="hidden flex items-center justify-between p-3 rounded-xl bg-slate-800/60 border border-slate-700 text-xs">
+              <div class="flex items-center space-x-2 truncate">
+                <i data-lucide="file-audio" class="w-4 h-4 text-indigo-400 flex-shrink-0"></i>
+                <span id="selectedFileName" class="truncate font-medium text-slate-200">sample.wav</span>
+              </div>
+              <button id="btnAnalyzeUploaded" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg shadow transition">
+                Analyze
+              </button>
+            </div>
+          </div>
+
+          <!-- Section 3: Demo Clips -->
+          <div id="sectionDemo" class="hidden space-y-3">
+            <p class="text-xs text-slate-400">Try these calibrated RAVDESS speech recordings:</p>
+            <div id="demoClipsList" class="space-y-2">
+              <button onclick="testDemoClip('happy')" class="w-full text-left p-3 rounded-xl bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700/60 transition flex items-center justify-between group">
+                <div class="flex items-center space-x-3">
+                  <span class="text-xl">😃</span>
+                  <div>
+                    <div class="text-xs font-semibold text-slate-200 group-hover:text-indigo-300">Happy Speech Sample</div>
+                    <div class="text-[10px] text-slate-400">Actor 01 - "Kids are talking by the door"</div>
+                  </div>
+                </div>
+                <i data-lucide="arrow-right" class="w-4 h-4 text-slate-500 group-hover:text-indigo-400"></i>
+              </button>
+
+              <button onclick="testDemoClip('angry')" class="w-full text-left p-3 rounded-xl bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700/60 transition flex items-center justify-between group">
+                <div class="flex items-center space-x-3">
+                  <span class="text-xl">😡</span>
+                  <div>
+                    <div class="text-xs font-semibold text-slate-200 group-hover:text-indigo-300">Angry Speech Sample</div>
+                    <div class="text-[10px] text-slate-400">Actor 01 - High intensity agitation</div>
+                  </div>
+                </div>
+                <i data-lucide="arrow-right" class="w-4 h-4 text-slate-500 group-hover:text-indigo-400"></i>
+              </button>
+
+              <button onclick="testDemoClip('sad')" class="w-full text-left p-3 rounded-xl bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700/60 transition flex items-center justify-between group">
+                <div class="flex items-center space-x-3">
+                  <span class="text-xl">😢</span>
+                  <div>
+                    <div class="text-xs font-semibold text-slate-200 group-hover:text-indigo-300">Sad Speech Sample</div>
+                    <div class="text-[10px] text-slate-400">Actor 01 - Somber pitch & tempo</div>
+                  </div>
+                </div>
+                <i data-lucide="arrow-right" class="w-4 h-4 text-slate-500 group-hover:text-indigo-400"></i>
+              </button>
+
+              <button onclick="testDemoClip('calm')" class="w-full text-left p-3 rounded-xl bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700/60 transition flex items-center justify-between group">
+                <div class="flex items-center space-x-3">
+                  <span class="text-xl">😌</span>
+                  <div>
+                    <div class="text-xs font-semibold text-slate-200 group-hover:text-indigo-300">Calm Speech Sample</div>
+                    <div class="text-[10px] text-slate-400">Actor 01 - Steady, relaxed inflection</div>
+                  </div>
+                </div>
+                <i data-lucide="arrow-right" class="w-4 h-4 text-slate-500 group-hover:text-indigo-400"></i>
+              </button>
+
+              <button onclick="testDemoClip('surprised')" class="w-full text-left p-3 rounded-xl bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700/60 transition flex items-center justify-between group">
+                <div class="flex items-center space-x-3">
+                  <span class="text-xl">😲</span>
+                  <div>
+                    <div class="text-xs font-semibold text-slate-200 group-hover:text-indigo-300">Surprised Speech Sample</div>
+                    <div class="text-[10px] text-slate-400">Actor 01 - Sudden pitch peak</div>
+                  </div>
+                </div>
+                <i data-lucide="arrow-right" class="w-4 h-4 text-slate-500 group-hover:text-indigo-400"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Audio Playback Preview -->
+          <div id="playbackContainer" class="hidden mt-5 pt-4 border-t border-slate-700/60">
+            <p class="text-xs font-medium text-slate-400 mb-2 flex items-center space-x-1.5">
+              <i data-lucide="volume-2" class="w-3.5 h-3.5 text-indigo-400"></i>
+              <span>Audio Playback Preview:</span>
+            </p>
+            <audio id="audioPlayer" controls class="w-full h-10 rounded-lg"></audio>
+          </div>
+        </div>
+
+        <!-- Technical Pipeline Card -->
+        <div class="glass-card rounded-2xl p-5 text-xs text-slate-400 space-y-2.5">
+          <h4 class="font-semibold text-slate-200 flex items-center space-x-1.5">
+            <i data-lucide="cpu" class="w-4 h-4 text-indigo-400"></i>
+            <span>Architecture & Feature Pipeline</span>
+          </h4>
+          <p>
+            Each voice clip undergoes silence removal and computes <strong>478 acoustic features</strong>: 40 MFCCs + deltas, Mel spectrograms, Chroma, Tonnetz, Spectral Contrast, RMS energy, and Zero-Crossing Rates.
+          </p>
+          <div class="flex flex-wrap gap-1.5 pt-1">
+            <span class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-[11px] text-slate-300">FastAPI</span>
+            <span class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-[11px] text-slate-300">LightGBM</span>
+            <span class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-[11px] text-slate-300">XGBoost</span>
+            <span class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-[11px] text-slate-300">MLP Neural Net</span>
+            <span class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-[11px] text-slate-300">Librosa</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT: Results & Analytics (Col 7) -->
+      <div class="lg:col-span-7 space-y-6">
+
+        <!-- Loading State -->
+        <div id="loadingState" class="hidden glass-card rounded-2xl p-12 text-center">
+          <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-indigo-500 border-t-transparent mb-4"></div>
+          <h3 class="text-lg font-bold text-slate-200">Extracting Acoustic Features...</h3>
+          <p class="text-xs text-slate-400 mt-1">Analyzing spectral contrast, prosody, and emotion vectors</p>
+        </div>
+
+        <!-- Initial Placeholder State -->
+        <div id="emptyState" class="glass-card rounded-2xl p-12 text-center">
+          <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-center text-slate-400">
+            <i data-lucide="waveform" class="w-8 h-8"></i>
+          </div>
+          <h3 class="text-lg font-bold text-slate-200">Ready for Voice Input</h3>
+          <p class="text-xs text-slate-400 max-w-sm mx-auto mt-1">
+            Record a sentence into your microphone, upload an audio clip, or select a demo sample to see real-time sentiment & emotion classification.
+          </p>
+        </div>
+
+        <!-- Results Card Container -->
+        <div id="resultsContainer" class="hidden space-y-6">
+          
+          <!-- Top Badges: Sentiment + Emotion -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            
+            <!-- Sentiment Card -->
+            <div id="sentimentCard" class="glass-card rounded-2xl p-5 border-l-4 transition">
+              <div class="text-[11px] uppercase tracking-wider font-semibold text-slate-400 mb-1 flex items-center justify-between">
+                <span>Predicted Sentiment</span>
+                <span id="sentimentPill" class="px-2 py-0.5 rounded-full text-[10px] font-bold"></span>
+              </div>
+              <div class="flex items-baseline space-x-2 mt-2">
+                <span id="sentimentLabel" class="text-3xl font-extrabold tracking-tight text-white">-</span>
+                <span id="sentimentConfidence" class="text-sm font-semibold text-slate-400">--%</span>
+              </div>
+              <div class="w-full bg-slate-800 rounded-full h-2 mt-3 overflow-hidden">
+                <div id="sentimentBar" class="h-2 rounded-full transition-all duration-700" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <!-- Emotion Card -->
+            <div id="emotionCard" class="glass-card rounded-2xl p-5 border-l-4 border-indigo-500">
+              <div class="text-[11px] uppercase tracking-wider font-semibold text-slate-400 mb-1 flex items-center justify-between">
+                <span>Acoustic Emotion</span>
+                <span id="emotionEmoji" class="text-lg">😃</span>
+              </div>
+              <div class="flex items-baseline space-x-2 mt-2">
+                <span id="emotionLabel" class="text-3xl font-extrabold tracking-tight capitalize text-white">-</span>
+                <span id="emotionConfidence" class="text-sm font-semibold text-slate-400">--%</span>
+              </div>
+              <div class="w-full bg-slate-800 rounded-full h-2 mt-3 overflow-hidden">
+                <div id="emotionBar" class="bg-indigo-500 h-2 rounded-full transition-all duration-700" style="width: 0%"></div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Emotion Probabilities Chart -->
+          <div class="glass-card rounded-2xl p-6">
+            <h4 class="text-xs uppercase tracking-wider font-semibold text-slate-300 mb-4 flex items-center space-x-2">
+              <i data-lucide="bar-chart" class="w-4 h-4 text-indigo-400"></i>
+              <span>Full Emotion Probability Distribution (8 Classes)</span>
+            </h4>
+            <div class="h-64">
+              <canvas id="emotionChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Acoustic Metadata Stats -->
+          <div class="grid grid-cols-3 gap-3">
+            <div class="glass-card rounded-xl p-3.5 text-center">
+              <div class="text-[10px] uppercase tracking-wider text-slate-400">Audio Duration</div>
+              <div id="statDuration" class="text-lg font-bold text-white mt-0.5">--</div>
+            </div>
+            <div class="glass-card rounded-xl p-3.5 text-center">
+              <div class="text-[10px] uppercase tracking-wider text-slate-400">Energy Level (RMS)</div>
+              <div id="statEnergy" class="text-lg font-bold text-white mt-0.5">--</div>
+            </div>
+            <div class="glass-card rounded-xl p-3.5 text-center">
+              <div class="text-[10px] uppercase tracking-wider text-slate-400">Zero-Crossing Rate</div>
+              <div id="statZcr" class="text-lg font-bold text-white mt-0.5">--</div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Modal: Model Evaluation & Confusion Matrices -->
+  <div id="metricsModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass-card rounded-2xl max-w-4xl w-full p-6 border border-slate-700 relative max-h-[90vh] overflow-y-auto">
+      <button id="btnCloseMetrics" class="absolute top-4 right-4 text-slate-400 hover:text-white transition">
+        <i data-lucide="x" class="w-6 h-6"></i>
+      </button>
+      
+      <div class="flex items-center space-x-3 mb-6">
+        <div class="p-2 rounded-xl bg-indigo-500/10 text-indigo-400">
+          <i data-lucide="award" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-white">Model Performance & Evaluation Benchmark</h3>
+          <p class="text-xs text-slate-400">RAVDESS Emotional Speech Dataset (1,440 clips + Data Augmentation = 4,320 instances)</p>
+        </div>
+      </div>
+
+      <div id="metricsContent" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+            <div class="text-xs text-slate-400 uppercase font-semibold">Sentiment Model</div>
+            <div id="modalSentModel" class="text-lg font-bold text-indigo-400 mt-1">Ensemble</div>
+            <div id="modalSentAcc" class="text-2xl font-black text-white mt-1">--%</div>
+            <div class="text-xs text-slate-400 mt-1">3 Classes (Positive, Negative, Neutral)</div>
+          </div>
+          <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+            <div class="text-xs text-slate-400 uppercase font-semibold">Emotion Model</div>
+            <div id="modalEmoModel" class="text-lg font-bold text-purple-400 mt-1">Ensemble</div>
+            <div id="modalEmoAcc" class="text-2xl font-black text-white mt-1">--%</div>
+            <div class="text-xs text-slate-400 mt-1">8 Classes (Granular Emotion Detection)</div>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-3">Confusion Matrices</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="rounded-xl overflow-hidden border border-slate-800 bg-slate-950 p-2 text-center">
+              <p class="text-xs text-slate-400 mb-2 font-medium">Sentiment Classification Matrix</p>
+              <img src="/model-assets/confusion_matrix_sentiment.png" alt="Sentiment Confusion Matrix" class="w-full rounded-lg" onerror="this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><text y=\'50%\' x=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\' fill=\'gray\'>Matrix generating...</text></svg>'" />
+            </div>
+            <div class="rounded-xl overflow-hidden border border-slate-800 bg-slate-950 p-2 text-center">
+              <p class="text-xs text-slate-400 mb-2 font-medium">Emotion Classification Matrix</p>
+              <img src="/model-assets/confusion_matrix_emotion.png" alt="Emotion Confusion Matrix" class="w-full rounded-lg" onerror="this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><text y=\'50%\' x=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\' fill=\'gray\'>Matrix generating...</text></svg>'" />
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Mobile QR Code Scanner -->
+  <div id="qrModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-card rounded-2xl max-w-md w-full p-6 border border-slate-700 text-center relative shadow-2xl">
+      <button id="btnCloseQrModal" class="absolute top-4 right-4 text-slate-400 hover:text-white transition">
+        <i data-lucide="x" class="w-6 h-6"></i>
+      </button>
+
+      <div class="w-12 h-12 mx-auto mb-3 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center shadow-lg">
+        <i data-lucide="smartphone" class="w-6 h-6"></i>
+      </div>
+
+      <h3 class="text-xl font-bold text-white">Scan with Your Phone</h3>
+      <p class="text-xs text-slate-400 mt-1">
+        Anyone on the same Wi-Fi can scan this QR code to try voice sentiment analysis on their phone!
+      </p>
+
+      <div class="my-5 p-4 rounded-2xl bg-white mx-auto inline-block shadow-2xl border border-slate-200">
+        <img id="qrImage" src="/api/qr-code" alt="Phone QR Code" class="w-56 h-56 mx-auto rounded-lg object-contain" />
+      </div>
+
+      <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-left mb-4">
+        <div class="text-[11px] text-slate-400 uppercase font-semibold mb-1">Direct Mobile Web Link:</div>
+        <div class="flex items-center justify-between space-x-2">
+          <span id="qrNetworkUrl" class="font-mono text-xs text-indigo-300 truncate">Loading network link...</span>
+          <button id="btnCopyUrl" class="px-2.5 py-1 text-[11px] font-semibold bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition flex items-center space-x-1 flex-shrink-0">
+            <i data-lucide="copy" class="w-3 h-3"></i>
+            <span id="copyBtnText">Copy</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="text-left text-xs text-slate-400 space-y-1.5 bg-slate-950/40 p-3.5 rounded-xl border border-slate-800/80">
+        <div class="font-semibold text-slate-300">How to use on phone:</div>
+        <div>1. Connect your phone to this laptop's Wi-Fi or Hotspot.</div>
+        <div>2. Open your phone camera and point it at the QR code.</div>
+        <div>3. Tap the link, tap the big microphone button, and speak!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800/80 py-4 bg-slate-950/40 text-center text-xs text-slate-500">
+    Designed for Sentiment & Emotion Speech Analysis &bull; 6th Semester Engineering &bull; Powered by FastAPI & Librosa
+  </footer>
+
+  <!-- Scripts -->
+  <script>
+    lucide.createIcons();
+
+    // DOM Elements
+    const tabMic = document.getElementById('tabMic');
+    const tabUpload = document.getElementById('tabUpload');
+    const tabDemo = document.getElementById('tabDemo');
+    const sectionMic = document.getElementById('sectionMic');
+    const sectionUpload = document.getElementById('sectionUpload');
+    const sectionDemo = document.getElementById('sectionDemo');
+
+    const btnRecordToggle = document.getElementById('btnRecordToggle');
+    const recIcon = document.getElementById('recIcon');
+    const recTimer = document.getElementById('recTimer');
+    const recStatusText = document.getElementById('recStatusText');
+    const visualizerCanvas = document.getElementById('visualizerCanvas');
+    const audioPlayer = document.getElementById('audioPlayer');
+    const playbackContainer = document.getElementById('playbackContainer');
+
+    const fileInput = document.getElementById('fileInput');
+    const dropZone = document.getElementById('dropZone');
+    const selectedFileInfo = document.getElementById('selectedFileInfo');
+    const selectedFileName = document.getElementById('selectedFileName');
+    const btnAnalyzeUploaded = document.getElementById('btnAnalyzeUploaded');
+
+    const loadingState = document.getElementById('loadingState');
+    const emptyState = document.getElementById('emptyState');
+    const resultsContainer = document.getElementById('resultsContainer');
+
+    const sentimentCard = document.getElementById('sentimentCard');
+    const sentimentLabel = document.getElementById('sentimentLabel');
+    const sentimentConfidence = document.getElementById('sentimentConfidence');
+    const sentimentBar = document.getElementById('sentimentBar');
+    const sentimentPill = document.getElementById('sentimentPill');
+
+    const emotionCard = document.getElementById('emotionCard');
+    const emotionLabel = document.getElementById('emotionLabel');
+    const emotionConfidence = document.getElementById('emotionConfidence');
+    const emotionBar = document.getElementById('emotionBar');
+    const emotionEmoji = document.getElementById('emotionEmoji');
+
+    const statDuration = document.getElementById('statDuration');
+    const statEnergy = document.getElementById('statEnergy');
+    const statZcr = document.getElementById('statZcr');
+
+    const btnOpenMetrics = document.getElementById('btnOpenMetrics');
+    const btnCloseMetrics = document.getElementById('btnCloseMetrics');
+    const metricsModal = document.getElementById('metricsModal');
+
+    let emotionChartInstance = null;
+    let mediaStream = null;
+    let audioContext = null;
+    let analyser = null;
+    let scriptProcessor = null;
+    let pcmBuffers = [];
+    let isRecording = false;
+    let timerInterval = null;
+    let secondsElapsed = 0;
+    let visualizerAnimation = null;
+    let currentUploadedFile = null;
+
+    // Direct 16-bit PCM WAV Encoder (no ffmpeg / webm dependency)
+    function encodeWAV(samples, sampleRate) {
+      const buffer = new ArrayBuffer(44 + samples.length * 2);
+      const view = new DataView(buffer);
+
+      function writeString(view, offset, string) {
+        for (let i = 0; i < string.length; i++) {
+          view.setUint8(offset + i, string.charCodeAt(i));
+        }
+      }
+
+      writeString(view, 0, 'RIFF');
+      view.setUint32(4, 36 + samples.length * 2, true);
+      writeString(view, 8, 'WAVE');
+      writeString(view, 12, 'fmt ');
+      view.setUint32(16, 16, true); // SubChunk1Size for PCM
+      view.setUint16(20, 1, true);  // Format 1 = PCM
+      view.setUint16(22, 1, true);  // Mono
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate * 2, true); // ByteRate = sampleRate * 1 * 16/8
+      view.setUint16(32, 2, true);  // BlockAlign = 1 * 16/8
+      view.setUint16(34, 16, true); // 16 bits
+      writeString(view, 36, 'data');
+      view.setUint32(40, samples.length * 2, true);
+
+      let offset = 44;
+      for (let i = 0; i < samples.length; i++, offset += 2) {
+        let s = Math.max(-1, Math.min(1, samples[i]));
+        view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+      }
+
+      return new Blob([view], { type: 'audio/wav' });
+    }
+
+    const EMOTION_EMOJIS = {
+      'happy': '😃',
+      'calm': '😌',
+      'neutral': '😐',
+      'sad': '😢',
+      'angry': '😡',
+      'fearful': '😨',
+      'disgust': '🤢',
+      'surprised': '😲'
+    };
+
+    // Tab Navigation
+    function switchTab(activeTab, activeSection) {
+      [tabMic, tabUpload, tabDemo].forEach(t => {
+        t.className = "flex-1 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center justify-center space-x-1.5 transition";
+      });
+      activeTab.className = "flex-1 pb-2 text-xs font-semibold uppercase tracking-wider text-indigo-400 border-b-2 border-indigo-500 flex items-center justify-center space-x-1.5 transition";
+
+      [sectionMic, sectionUpload, sectionDemo].forEach(s => s.classList.add('hidden'));
+      activeSection.classList.remove('hidden');
+    }
+
+    tabMic.addEventListener('click', () => switchTab(tabMic, sectionMic));
+    tabUpload.addEventListener('click', () => switchTab(tabUpload, sectionUpload));
+    tabDemo.addEventListener('click', () => switchTab(tabDemo, sectionDemo));
+
+    // File Drag and Drop & Browsing
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('border-indigo-500');
+    });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-indigo-500'));
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('border-indigo-500');
+      if (e.dataTransfer.files.length > 0) {
+        handleFileSelection(e.dataTransfer.files[0]);
+      }
+    });
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        handleFileSelection(e.target.files[0]);
+      }
+    });
+
+    function handleFileSelection(file) {
+      currentUploadedFile = file;
+      selectedFileName.textContent = file.name;
+      selectedFileInfo.classList.remove('hidden');
+      
+      const audioUrl = URL.createObjectURL(file);
+      audioPlayer.src = audioUrl;
+      playbackContainer.classList.remove('hidden');
+    }
+
+    btnAnalyzeUploaded.addEventListener('click', () => {
+      if (currentUploadedFile) {
+        uploadAndAnalyze(currentUploadedFile);
+      }
+    });
+
+    // Live Microphone Recording
+    btnRecordToggle.addEventListener('click', async () => {
+      if (!isRecording) {
+        await startRecording();
+      } else {
+        stopRecording();
+      }
+    });
+
+    async function startRecording() {
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const source = audioContext.createMediaStreamSource(mediaStream);
+        
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 256;
+        source.connect(analyser);
+        drawVisualizer();
+
+        // Buffer capture using ScriptProcessorNode
+        scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
+        pcmBuffers = [];
+        scriptProcessor.onaudioprocess = (e) => {
+          if (!isRecording) return;
+          const channelData = e.inputBuffer.getChannelData(0);
+          pcmBuffers.push(new Float32Array(channelData));
+        };
+        source.connect(scriptProcessor);
+        scriptProcessor.connect(audioContext.destination);
+
+        isRecording = true;
+        btnRecordToggle.classList.add('pulse-record');
+        recIcon.setAttribute('data-lucide', 'square');
+        lucide.createIcons();
+        recStatusText.textContent = "Listening... Speak clearly into the microphone";
+        
+        secondsElapsed = 0;
+        recTimer.textContent = "00:00";
+        timerInterval = setInterval(() => {
+          secondsElapsed++;
+          const mins = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
+          const secs = String(secondsElapsed % 60).padStart(2, '0');
+          recTimer.textContent = `${mins}:${secs}`;
+        }, 1000);
+
+      } catch (err) {
+        alert("Microphone access was denied or is not supported in this browser. Please allow microphone permissions or use file upload.");
+        console.error("Mic error:", err);
+      }
+    }
+
+    function stopRecording() {
+      if (!isRecording) return;
+      isRecording = false;
+      clearInterval(timerInterval);
+      btnRecordToggle.classList.remove('pulse-record');
+      recIcon.setAttribute('data-lucide', 'mic');
+      lucide.createIcons();
+      recStatusText.textContent = "Processing audio...";
+
+      // Stop audio tracks
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(track => track.stop());
+      }
+      cancelAnimationFrame(visualizerAnimation);
+
+      // Assemble PCM samples
+      const totalLen = pcmBuffers.reduce((sum, b) => sum + b.length, 0);
+      if (totalLen === 0) {
+        recStatusText.textContent = "No audio captured.";
+        return;
+      }
+
+      const mergedSamples = new Float32Array(totalLen);
+      let offset = 0;
+      for (const b of pcmBuffers) {
+        mergedSamples.set(b, offset);
+        offset += b.length;
+      }
+
+      const sampleRate = audioContext ? audioContext.sampleRate : 44100;
+      const wavBlob = encodeWAV(mergedSamples, sampleRate);
+      
+      if (audioContext) {
+        audioContext.close();
+      }
+
+      const audioUrl = URL.createObjectURL(wavBlob);
+      audioPlayer.src = audioUrl;
+      playbackContainer.classList.remove('hidden');
+      uploadAndAnalyze(wavBlob, 'recorded_voice.wav');
+    }
+
+    function drawVisualizer() {
+      const canvas = visualizerCanvas;
+      const ctx = canvas.getContext('2d');
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+
+      function render() {
+        visualizerAnimation = requestAnimationFrame(render);
+        analyser.getByteFrequencyData(dataArray);
+
+        ctx.fillStyle = 'rgba(2, 6, 23, 0.4)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const barWidth = (canvas.width / bufferLength) * 2.5;
+        let x = 0;
+        for (let i = 0; i < bufferLength; i++) {
+          const barHeight = (dataArray[i] / 255) * canvas.height;
+          ctx.fillStyle = `rgb(${99 + barHeight}, 102, 241)`;
+          ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+          x += barWidth + 1;
+        }
+      }
+      render();
+    }
+
+    // Demo Clip Testing
+    async function testDemoClip(emotionKey) {
+      try {
+        emptyState.classList.add('hidden');
+        resultsContainer.classList.add('hidden');
+        loadingState.classList.remove('hidden');
+
+        // Fetch demo audio
+        const res = await fetch(`/api/sample-audio/${emotionKey}`);
+        if (!res.ok) throw new Error("Demo clip not available");
+        const blob = await res.blob();
+        
+        audioPlayer.src = URL.createObjectURL(blob);
+        playbackContainer.classList.remove('hidden');
+        
+        uploadAndAnalyze(blob, `${emotionKey}_sample.wav`);
+      } catch (err) {
+        loadingState.classList.add('hidden');
+        emptyState.classList.remove('hidden');
+        alert("Failed to load demo clip: " + err.message);
+      }
+    }
+
+    // Upload and Analyze API Call
+    async function uploadAndAnalyze(fileOrBlob, filename = 'voice.wav') {
+      emptyState.classList.add('hidden');
+      resultsContainer.classList.add('hidden');
+      loadingState.classList.remove('hidden');
+
+      const formData = new FormData();
+      formData.append('file', fileOrBlob, filename);
+
+      try {
+        const response = await fetch('/api/predict', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.detail || "Prediction request failed.");
+        }
+
+        const data = await response.json();
+        renderResults(data);
+      } catch (err) {
+        alert("Error during prediction: " + err.message);
+        emptyState.classList.remove('hidden');
+      } finally {
+        loadingState.classList.add('hidden');
+      }
+    }
+
+    function renderResults(data) {
+      resultsContainer.classList.remove('hidden');
+
+      // Sentiment Card Styling
+      const sent = data.sentiment;
+      sentimentLabel.textContent = sent.label;
+      sentimentConfidence.textContent = `${sent.confidence}%`;
+      sentimentBar.style.width = `${sent.confidence}%`;
+
+      sentimentCard.className = "glass-card rounded-2xl p-5 border-l-4 transition ";
+      if (sent.label === 'Positive') {
+        sentimentCard.classList.add('border-emerald-500');
+        sentimentBar.className = "bg-emerald-500 h-2 rounded-full transition-all duration-700";
+        sentimentPill.className = "px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400";
+        sentimentPill.textContent = "UPBEAT / FAVORABLE";
+      } else if (sent.label === 'Negative') {
+        sentimentCard.classList.add('border-rose-500');
+        sentimentBar.className = "bg-rose-500 h-2 rounded-full transition-all duration-700";
+        sentimentPill.className = "px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-400";
+        sentimentPill.textContent = "AGITATED / ADVERSE";
+      } else {
+        sentimentCard.classList.add('border-sky-500');
+        sentimentBar.className = "bg-sky-500 h-2 rounded-full transition-all duration-700";
+        sentimentPill.className = "px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/20 text-sky-400";
+        sentimentPill.textContent = "EQUILIBRIUM / NEUTRAL";
+      }
+
+      // Emotion Card
+      const emo = data.emotion;
+      emotionLabel.textContent = emo.label;
+      emotionConfidence.textContent = `${emo.confidence}%`;
+      emotionBar.style.width = `${emo.confidence}%`;
+      emotionEmoji.textContent = EMOTION_EMOJIS[emo.label.toLowerCase()] || '🗣️';
+
+      // Acoustic Stats
+      statDuration.textContent = `${data.audio_stats.duration_seconds}s`;
+      statEnergy.textContent = `${data.audio_stats.energy_level}`;
+      statZcr.textContent = `${data.audio_stats.zcr}`;
+
+      // Render Emotion Distribution Chart
+      renderEmotionChart(emo.probabilities);
+    }
+
+    function renderEmotionChart(probs) {
+      const labels = Object.keys(probs);
+      const values = Object.values(probs);
+
+      const ctx = document.getElementById('emotionChart').getContext('2d');
+      if (emotionChartInstance) {
+        emotionChartInstance.destroy();
+      }
+
+      emotionChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels.map(l => l.charAt(0).toUpperCase() + l.slice(1)),
+          datasets: [{
+            label: 'Confidence (%)',
+            data: values,
+            backgroundColor: labels.map(l => {
+              if (['happy', 'calm'].includes(l.toLowerCase())) return 'rgba(16, 185, 129, 0.7)';
+              if (['angry', 'sad', 'fearful', 'disgust'].includes(l.toLowerCase())) return 'rgba(244, 63, 94, 0.7)';
+              return 'rgba(99, 102, 241, 0.7)';
+            }),
+            borderRadius: 6,
+            borderWidth: 1,
+            borderColor: 'rgba(255, 255, 255, 0.1)'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => ` Confidence: ${ctx.raw}%`
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 100,
+              grid: { color: 'rgba(255, 255, 255, 0.05)' },
+              ticks: { color: '#94a3b8', font: { size: 10 } }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { color: '#cbd5e1', font: { size: 11, weight: 'bold' } }
+            }
+          }
+        }
+      });
+    }
+
+    // Modal Events
+    btnOpenMetrics.addEventListener('click', async () => {
+      try {
+        const res = await fetch('/api/metrics');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.sentiment_accuracy) {
+            document.getElementById('modalSentModel').textContent = data.sentiment_model;
+            document.getElementById('modalSentAcc').textContent = `${(data.sentiment_accuracy * 100).toFixed(2)}%`;
+            document.getElementById('modalEmoModel').textContent = data.emotion_model;
+            document.getElementById('modalEmoAcc').textContent = `${(data.emotion_accuracy * 100).toFixed(2)}%`;
+          }
+        }
+      } catch (e) {
+        console.warn("Metrics fetch error", e);
+      }
+      metricsModal.classList.remove('hidden');
+    });
+
+    btnCloseMetrics.addEventListener('click', () => metricsModal.classList.add('hidden'));
+    metricsModal.addEventListener('click', (e) => {
+      if (e.target === metricsModal) metricsModal.classList.add('hidden');
+    });
+
+    // QR Code Modal Events
+    const btnOpenQrModal = document.getElementById('btnOpenQrModal');
+    const btnCloseQrModal = document.getElementById('btnCloseQrModal');
+    const qrModal = document.getElementById('qrModal');
+    const qrNetworkUrl = document.getElementById('qrNetworkUrl');
+    const btnCopyUrl = document.getElementById('btnCopyUrl');
+    const copyBtnText = document.getElementById('copyBtnText');
+    const mobileVoiceInput = document.getElementById('mobileVoiceInput');
+
+    let currentNetworkUrl = "";
+
+    async function loadNetworkInfo() {
+      try {
+        const res = await fetch('/api/network-info');
+        if (res.ok) {
+          const data = await res.json();
+          currentNetworkUrl = data.network_url;
+          if (qrNetworkUrl) qrNetworkUrl.textContent = currentNetworkUrl;
+        }
+      } catch (e) {
+        console.warn("Network info fetch error:", e);
+      }
+    }
+    loadNetworkInfo();
+
+    if (btnOpenQrModal) {
+      btnOpenQrModal.addEventListener('click', () => {
+        loadNetworkInfo();
+        qrModal.classList.remove('hidden');
+      });
+    }
+
+    if (btnCloseQrModal) {
+      btnCloseQrModal.addEventListener('click', () => qrModal.classList.add('hidden'));
+    }
+
+    if (qrModal) {
+      qrModal.addEventListener('click', (e) => {
+        if (e.target === qrModal) qrModal.classList.add('hidden');
+      });
+    }
+
+    if (btnCopyUrl) {
+      btnCopyUrl.addEventListener('click', async () => {
+        if (!currentNetworkUrl) return;
+        try {
+          await navigator.clipboard.writeText(currentNetworkUrl);
+          copyBtnText.textContent = "Copied!";
+          setTimeout(() => { copyBtnText.textContent = "Copy"; }, 2000);
+        } catch (err) {
+          prompt("Copy this URL:", currentNetworkUrl);
+        }
+      });
+    }
+
+    // Mobile voice recorder file picker
+    if (mobileVoiceInput) {
+      mobileVoiceInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+          handleFileSelection(e.target.files[0]);
+          uploadAndAnalyze(e.target.files[0], e.target.files[0].name);
+        }
+      });
+    }
+  </script>
+</body>
+</html>
